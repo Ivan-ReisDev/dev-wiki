@@ -151,6 +151,13 @@ ng generate library minha-lib
 // usuario.component.ts
 import { Component, OnInit } from '@angular/core';
 
+// Interface para o objeto usuario
+interface Usuario {
+  nome: string;
+  email: string;
+  idade: number;
+}
+
 @Component({
   selector: 'app-usuario',
   templateUrl: './usuario.component.html',
@@ -165,8 +172,8 @@ export class UsuarioComponent implements OnInit {
   // Array
   usuarios: string[] = ['Maria', 'Pedro', 'Ana'];
 
-  // Objeto
-  usuario = {
+  // Objeto tipado
+  usuario: Usuario = {
     nome: 'João',
     email: 'joao@email.com',
     idade: 25
@@ -365,13 +372,19 @@ email: string = '';
 
 ```typescript
 // component.ts
-usuarios = [
+interface Usuario {
+  id: number;
+  nome: string;
+  idade: number;
+}
+
+usuarios: Usuario[] = [
   { id: 1, nome: 'João', idade: 25 },
   { id: 2, nome: 'Maria', idade: 30 },
   { id: 3, nome: 'Pedro', idade: 35 }
 ];
 
-numeros = [1, 2, 3, 4, 5];
+numeros: number[] = [1, 2, 3, 4, 5];
 ```
 
 ```html
@@ -395,7 +408,7 @@ numeros = [1, 2, 3, 4, 5];
 
 ```typescript
 // trackBy method
-trackByUsuarioId(index: number, usuario: any): number {
+trackByUsuarioId(index: number, usuario: Usuario): number {
   return usuario.id;
 }
 ```
@@ -419,7 +432,9 @@ trackByUsuarioId(index: number, usuario: any): number {
 
 ```typescript
 // component.ts
-role: string = 'admin';
+type Role = 'admin' | 'user' | 'guest';
+
+role: Role = 'admin';
 ```
 
 ```html
@@ -481,6 +496,12 @@ role: string = 'admin';
 // filho.component.ts
 import { Component, Input } from '@angular/core';
 
+// Interface para o usuário
+interface Usuario {
+  nome: string;
+  email: string;
+}
+
 @Component({
   selector: 'app-filho',
   template: `
@@ -492,7 +513,7 @@ import { Component, Input } from '@angular/core';
 })
 export class FilhoComponent {
   @Input() titulo: string = '';
-  @Input() usuario: any;
+  @Input() usuario!: Usuario;
   @Input() contador: number = 0;
 
   // Input com alias
@@ -526,6 +547,12 @@ export class FilhoComponent {
 // filho.component.ts
 import { Component, Output, EventEmitter } from '@angular/core';
 
+// Interface para os dados enviados
+interface DadosUsuario {
+  nome: string;
+  idade: number;
+}
+
 @Component({
   selector: 'app-filho',
   template: `
@@ -535,7 +562,7 @@ import { Component, Output, EventEmitter } from '@angular/core';
 })
 export class FilhoComponent {
   @Output() mensagem = new EventEmitter<string>();
-  @Output() dadosEnviados = new EventEmitter<any>();
+  @Output() dadosEnviados = new EventEmitter<DadosUsuario>();
 
   notificar(): void {
     this.mensagem.emit('Olá do filho!');
@@ -565,7 +592,7 @@ export class PaiComponent {
     console.log('Mensagem recebida:', msg);
   }
 
-  receberDados(dados: any): void {
+  receberDados(dados: DadosUsuario): void {
     console.log('Dados recebidos:', dados);
   }
 }
@@ -580,31 +607,37 @@ export class PaiComponent {
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
+// Interface para o modelo Usuario
+interface Usuario {
+  id: number;
+  nome: string;
+}
+
 @Injectable({
   providedIn: 'root' // Disponível globalmente
 })
 export class UsuarioService {
-  private usuarios: any[] = [
+  private usuarios: Usuario[] = [
     { id: 1, nome: 'João' },
     { id: 2, nome: 'Maria' }
   ];
 
   // BehaviorSubject para estado compartilhado
-  private usuariosSubject = new BehaviorSubject<any[]>(this.usuarios);
-  public usuarios$ = this.usuariosSubject.asObservable();
+  private usuariosSubject = new BehaviorSubject<Usuario[]>(this.usuarios);
+  public usuarios$: Observable<Usuario[]> = this.usuariosSubject.asObservable();
 
   constructor() { }
 
   // Métodos
-  getUsuarios(): any[] {
+  getUsuarios(): Usuario[] {
     return this.usuarios;
   }
 
-  getUsuario(id: number): any {
+  getUsuario(id: number): Usuario | undefined {
     return this.usuarios.find(u => u.id === id);
   }
 
-  adicionarUsuario(usuario: any): void {
+  adicionarUsuario(usuario: Usuario): void {
     this.usuarios.push(usuario);
     this.usuariosSubject.next(this.usuarios);
   }
@@ -614,7 +647,7 @@ export class UsuarioService {
     this.usuariosSubject.next(this.usuarios);
   }
 
-  atualizarUsuario(id: number, dados: any): void {
+  atualizarUsuario(id: number, dados: Partial<Usuario>): void {
     const index = this.usuarios.findIndex(u => u.id === id);
     if (index !== -1) {
       this.usuarios[index] = { ...this.usuarios[index], ...dados };
@@ -631,12 +664,18 @@ export class UsuarioService {
 import { Component, OnInit } from '@angular/core';
 import { UsuarioService } from './services/usuario.service';
 
+// Interface Usuario (pode estar em arquivo separado)
+interface Usuario {
+  id: number;
+  nome: string;
+}
+
 @Component({
   selector: 'app-lista-usuarios',
   templateUrl: './lista-usuarios.component.html'
 })
 export class ListaUsuariosComponent implements OnInit {
-  usuarios: any[] = [];
+  usuarios: Usuario[] = [];
 
   // Injetar service no construtor
   constructor(private usuarioService: UsuarioService) { }
@@ -646,7 +685,7 @@ export class ListaUsuariosComponent implements OnInit {
     this.usuarios = this.usuarioService.getUsuarios();
 
     // Subscrever ao Observable
-    this.usuarioService.usuarios$.subscribe(usuarios => {
+    this.usuarioService.usuarios$.subscribe((usuarios: Usuario[]) => {
       this.usuarios = usuarios;
     });
   }
@@ -662,9 +701,18 @@ export class ListaUsuariosComponent implements OnInit {
 ```typescript
 // api.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, retry } from 'rxjs/operators';
+
+// Interfaces
+interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+}
+
+type CreateUsuarioDTO = Omit<Usuario, 'id'>;
 
 @Injectable({
   providedIn: 'root'
@@ -675,47 +723,47 @@ export class ApiService {
   constructor(private http: HttpClient) { }
 
   // GET
-  getUsuarios(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/usuarios`).pipe(
+  getUsuarios(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.apiUrl}/usuarios`).pipe(
       retry(3),
       catchError(this.handleError)
     );
   }
 
   // GET com parâmetros
-  getUsuario(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/usuarios/${id}`);
+  getUsuario(id: number): Observable<Usuario> {
+    return this.http.get<Usuario>(`${this.apiUrl}/usuarios/${id}`);
   }
 
   // GET com query params
-  buscarUsuarios(filtro: string): Observable<any[]> {
+  buscarUsuarios(filtro: string): Observable<Usuario[]> {
     const params = new HttpParams()
       .set('q', filtro)
       .set('limit', '10');
 
-    return this.http.get<any[]>(`${this.apiUrl}/usuarios`, { params });
+    return this.http.get<Usuario[]>(`${this.apiUrl}/usuarios`, { params });
   }
 
   // POST
-  criarUsuario(usuario: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/usuarios`, usuario).pipe(
+  criarUsuario(usuario: CreateUsuarioDTO): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.apiUrl}/usuarios`, usuario).pipe(
       catchError(this.handleError)
     );
   }
 
   // PUT
-  atualizarUsuario(id: number, usuario: any): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/usuarios/${id}`, usuario);
+  atualizarUsuario(id: number, usuario: Partial<Usuario>): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.apiUrl}/usuarios/${id}`, usuario);
   }
 
   // PATCH
-  atualizarParcial(id: number, dados: any): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/usuarios/${id}`, dados);
+  atualizarParcial(id: number, dados: Partial<Usuario>): Observable<Usuario> {
+    return this.http.patch<Usuario>(`${this.apiUrl}/usuarios/${id}`, dados);
   }
 
   // DELETE
-  deletarUsuario(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/usuarios/${id}`);
+  deletarUsuario(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/usuarios/${id}`);
   }
 
   // Com Headers customizados
@@ -729,7 +777,7 @@ export class ApiService {
   }
 
   // Tratamento de erro
-  private handleError(error: any): Observable<never> {
+  private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('Erro:', error);
     return throwError(() => new Error('Erro ao processar requisição'));
   }
@@ -1007,8 +1055,19 @@ import { FormsModule } from '@angular/forms';
 
 ```typescript
 // component.ts
+import { NgForm } from '@angular/forms';
+
+interface UsuarioForm {
+  nome: string;
+  email: string;
+  senha: string;
+  genero: string;
+  pais: string;
+  aceito: boolean;
+}
+
 export class FormularioComponent {
-  usuario = {
+  usuario: UsuarioForm = {
     nome: '',
     email: '',
     senha: '',
@@ -1017,7 +1076,7 @@ export class FormularioComponent {
     aceito: false
   };
 
-  onSubmit(form: any): void {
+  onSubmit(form: NgForm): void {
     if (form.valid) {
       console.log('Dados:', this.usuario);
     }
@@ -1326,15 +1385,20 @@ import { Pipe, PipeTransform } from '@angular/core';
   name: 'filtro'
 })
 export class FiltroPipe implements PipeTransform {
-  transform(items: any[], termo: string, campo: string): any[] {
+  transform<T extends Record<string, any>>(
+    items: T[],
+    termo: string,
+    campo: keyof T
+  ): T[] {
     if (!items || !termo) {
       return items;
     }
 
     termo = termo.toLowerCase();
 
-    return items.filter(item => {
-      return item[campo].toLowerCase().includes(termo);
+    return items.filter((item: T) => {
+      const valor = item[campo];
+      return typeof valor === 'string' && valor.toLowerCase().includes(termo);
     });
   }
 }
