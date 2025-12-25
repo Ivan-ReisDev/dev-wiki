@@ -39,14 +39,19 @@ npm run dev
 
 ### Componente Funcional
 
-```jsx
+```tsx
 // Componente básico
-function MeuComponente() {
+function MeuComponente(): JSX.Element {
   return <h1>Olá, Mundo!</h1>;
 }
 
 // Com props
-function Saudacao({ nome, idade }) {
+interface SaudacaoProps {
+  nome: string;
+  idade: number;
+}
+
+function Saudacao({ nome, idade }: SaudacaoProps): JSX.Element {
   return (
     <div>
       <h1>Olá, {nome}!</h1>
@@ -56,12 +61,22 @@ function Saudacao({ nome, idade }) {
 }
 
 // Com destructuring e valores padrão
-function Botao({ texto = 'Clique aqui', onClick }) {
+interface BotaoProps {
+  texto?: string;
+  onClick: () => void;
+}
+
+function Botao({ texto = 'Clique aqui', onClick }: BotaoProps): JSX.Element {
   return <button onClick={onClick}>{texto}</button>;
 }
 
 // Arrow function
-const Card = ({ titulo, descricao }) => (
+interface CardProps {
+  titulo: string;
+  descricao: string;
+}
+
+const Card = ({ titulo, descricao }: CardProps): JSX.Element => (
   <div className="card">
     <h2>{titulo}</h2>
     <p>{descricao}</p>
@@ -71,12 +86,16 @@ const Card = ({ titulo, descricao }) => (
 
 ### Props
 
-```jsx
+```tsx
 // Passando props
 <Saudacao nome="João" idade={25} />
 
 // Props children
-function Container({ children }) {
+interface ContainerProps {
+  children: React.ReactNode;
+}
+
+function Container({ children }: ContainerProps): JSX.Element {
   return <div className="container">{children}</div>;
 }
 
@@ -86,48 +105,56 @@ function Container({ children }) {
 </Container>
 
 // Spread props
-const props = { nome: 'Maria', idade: 30 };
+const props: SaudacaoProps = { nome: 'Maria', idade: 30 };
 <Saudacao {...props} />
 
-// PropTypes (validação)
-import PropTypes from 'prop-types';
+// TypeScript substitui PropTypes
+interface MeuComponenteProps {
+  nome: string;
+  idade?: number;
+  onClick?: () => void;
+}
 
-MeuComponente.propTypes = {
-  nome: PropTypes.string.isRequired,
-  idade: PropTypes.number,
-  onClick: PropTypes.func
-};
+// Uso do componente tipado
+function MeuComponente({ nome, idade, onClick }: MeuComponenteProps): JSX.Element {
+  return <div>{nome}</div>;
+}
 ```
 
 ## Hooks
 
 ### useState - Estado
 
-```jsx
+```tsx
 import { useState } from 'react';
 
-function Contador() {
-  // Declarar estado
-  const [count, setCount] = useState(0);
+function Contador(): JSX.Element {
+  // Declarar estado (tipo inferido automaticamente)
+  const [count, setCount] = useState<number>(0);
 
   // Múltiplos estados
-  const [nome, setNome] = useState('');
-  const [ativo, setAtivo] = useState(false);
+  const [nome, setNome] = useState<string>('');
+  const [ativo, setAtivo] = useState<boolean>(false);
 
-  // Estado com objeto
-  const [usuario, setUsuario] = useState({
+  // Estado com objeto (definir interface)
+  interface Usuario {
+    nome: string;
+    email: string;
+  }
+
+  const [usuario, setUsuario] = useState<Usuario>({
     nome: '',
     email: ''
   });
 
   // Atualizar estado
-  const incrementar = () => setCount(count + 1);
+  const incrementar = (): void => setCount(count + 1);
 
   // Atualizar com função (recomendado)
-  const incrementarSeguro = () => setCount(prev => prev + 1);
+  const incrementarSeguro = (): void => setCount(prev => prev + 1);
 
   // Atualizar objeto (manter outros campos)
-  const atualizarNome = (novoNome) => {
+  const atualizarNome = (novoNome: string): void => {
     setUsuario(prev => ({ ...prev, nome: novoNome }));
   };
 
@@ -142,12 +169,18 @@ function Contador() {
 
 ### useEffect - Efeitos Colaterais
 
-```jsx
+```tsx
 import { useState, useEffect } from 'react';
 
-function ExemploEffect() {
-  const [data, setData] = useState(null);
-  const [count, setCount] = useState(0);
+interface ApiData {
+  // Definir estrutura dos dados da API
+  id: number;
+  nome: string;
+}
+
+function ExemploEffect(): JSX.Element {
+  const [data, setData] = useState<ApiData | null>(null);
+  const [count, setCount] = useState<number>(0);
 
   // Executa após cada renderização
   useEffect(() => {
@@ -157,7 +190,6 @@ function ExemploEffect() {
   // Executa apenas na montagem (componentDidMount)
   useEffect(() => {
     console.log('Componente montado');
-    fetchData();
   }, []); // Array vazio
 
   // Executa quando count muda
@@ -167,7 +199,7 @@ function ExemploEffect() {
 
   // Cleanup (componentWillUnmount)
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer: NodeJS.Timeout = setInterval(() => {
       console.log('Timer rodando');
     }, 1000);
 
@@ -180,10 +212,10 @@ function ExemploEffect() {
 
   // Fetch de dados
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         const response = await fetch('https://api.exemplo.com/data');
-        const json = await response.json();
+        const json: ApiData = await response.json();
         setData(json);
       } catch (error) {
         console.error('Erro:', error);
@@ -199,17 +231,27 @@ function ExemploEffect() {
 
 ### useContext - Contexto
 
-```jsx
-import { createContext, useContext, useState } from 'react';
+```tsx
+import { createContext, useContext, useState, ReactNode } from 'react';
 
-// Criar contexto
-const TemaContext = createContext();
+// Definir tipo do contexto
+interface TemaContextType {
+  tema: 'claro' | 'escuro';
+  toggleTema: () => void;
+}
+
+// Criar contexto com valor padrão
+const TemaContext = createContext<TemaContextType | undefined>(undefined);
 
 // Provider
-function TemaProvider({ children }) {
-  const [tema, setTema] = useState('claro');
+interface TemaProviderProps {
+  children: ReactNode;
+}
 
-  const toggleTema = () => {
+function TemaProvider({ children }: TemaProviderProps): JSX.Element {
+  const [tema, setTema] = useState<'claro' | 'escuro'>('claro');
+
+  const toggleTema = (): void => {
     setTema(prev => prev === 'claro' ? 'escuro' : 'claro');
   };
 
@@ -220,9 +262,18 @@ function TemaProvider({ children }) {
   );
 }
 
+// Hook customizado para usar o contexto
+function useTema(): TemaContextType {
+  const context = useContext(TemaContext);
+  if (!context) {
+    throw new Error('useTema deve ser usado dentro de TemaProvider');
+  }
+  return context;
+}
+
 // Consumir contexto
-function Botao() {
-  const { tema, toggleTema } = useContext(TemaContext);
+function Botao(): JSX.Element {
+  const { tema, toggleTema } = useTema();
 
   return (
     <button
@@ -235,7 +286,7 @@ function Botao() {
 }
 
 // Usar no App
-function App() {
+function App(): JSX.Element {
   return (
     <TemaProvider>
       <Botao />
@@ -246,11 +297,21 @@ function App() {
 
 ### useReducer - Estado Complexo
 
-```jsx
+```tsx
 import { useReducer } from 'react';
 
+// Definir tipos
+interface State {
+  count: number;
+}
+
+type Action =
+  | { type: 'incrementar' }
+  | { type: 'decrementar' }
+  | { type: 'reset' };
+
 // Reducer
-function contadorReducer(state, action) {
+function contadorReducer(state: State, action: Action): State {
   switch (action.type) {
     case 'incrementar':
       return { count: state.count + 1 };
@@ -263,7 +324,7 @@ function contadorReducer(state, action) {
   }
 }
 
-function Contador() {
+function Contador(): JSX.Element {
   const [state, dispatch] = useReducer(contadorReducer, { count: 0 });
 
   return (
@@ -279,29 +340,36 @@ function Contador() {
 
 ### useRef - Referências
 
-```jsx
+```tsx
 import { useRef, useEffect } from 'react';
 
-function ExemploRef() {
-  const inputRef = useRef(null);
-  const countRef = useRef(0);
+function ExemploRef(): JSX.Element {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const countRef = useRef<number>(0);
 
   // Focar input na montagem
   useEffect(() => {
-    inputRef.current.focus();
+    inputRef.current?.focus();
   }, []);
 
   // Armazenar valor sem re-renderizar
-  const incrementar = () => {
+  const incrementar = (): void => {
     countRef.current += 1;
     console.log('Count (não renderiza):', countRef.current);
+  };
+
+  const focarInput = (): void => {
+    inputRef.current?.focus();
   };
 
   return (
     <div>
       <input ref={inputRef} type="text" />
-      <button onClick={() => inputRef.current.focus()}>
+      <button onClick={focarInput}>
         Focar Input
+      </button>
+      <button onClick={incrementar}>
+        Incrementar (sem render)
       </button>
     </div>
   );
@@ -310,15 +378,15 @@ function ExemploRef() {
 
 ### useMemo - Memoização de Valores
 
-```jsx
+```tsx
 import { useMemo, useState } from 'react';
 
-function ExemploMemo() {
-  const [count, setCount] = useState(0);
-  const [items, setItems] = useState([1, 2, 3, 4, 5]);
+function ExemploMemo(): JSX.Element {
+  const [count, setCount] = useState<number>(0);
+  const [items, setItems] = useState<number[]>([1, 2, 3, 4, 5]);
 
   // Cálculo pesado - só recalcula quando items muda
-  const total = useMemo(() => {
+  const total = useMemo<number>(() => {
     console.log('Calculando total...');
     return items.reduce((acc, item) => acc + item, 0);
   }, [items]);
@@ -335,20 +403,24 @@ function ExemploMemo() {
 
 ### useCallback - Memoização de Funções
 
-```jsx
+```tsx
 import { useCallback, useState } from 'react';
 
-function Lista({ onItemClick }) {
+interface ListaProps {
+  onItemClick: (item: string) => void;
+}
+
+function Lista({ onItemClick }: ListaProps): JSX.Element {
   // Componente filho
   return <div>{/* ... */}</div>;
 }
 
-function Parent() {
-  const [count, setCount] = useState(0);
+function Parent(): JSX.Element {
+  const [count, setCount] = useState<number>(0);
 
   // Sem useCallback, função é recriada a cada render
   // Com useCallback, função é memoizada
-  const handleClick = useCallback((item) => {
+  const handleClick = useCallback((item: string): void => {
     console.log('Item clicado:', item);
   }, []); // Dependências vazias = função nunca muda
 
@@ -364,25 +436,31 @@ function Parent() {
 
 ### Custom Hooks
 
-```jsx
+```tsx
 // useFetch - Hook customizado
 import { useState, useEffect } from 'react';
 
-function useFetch(url) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+interface UseFetchResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
+function useFetch<T>(url: string): UseFetchResult<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         setLoading(true);
         const response = await fetch(url);
-        const json = await response.json();
+        const json: T = await response.json();
         setData(json);
         setError(null);
       } catch (err) {
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Erro desconhecido');
       } finally {
         setLoading(false);
       }
@@ -395,8 +473,14 @@ function useFetch(url) {
 }
 
 // Usar o hook customizado
-function MeuComponente() {
-  const { data, loading, error } = useFetch('https://api.exemplo.com/users');
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+function MeuComponente(): JSX.Element {
+  const { data, loading, error } = useFetch<User[]>('https://api.exemplo.com/users');
 
   if (loading) return <p>Carregando...</p>;
   if (error) return <p>Erro: {error}</p>;
@@ -405,13 +489,13 @@ function MeuComponente() {
 }
 
 // useLocalStorage - Persistir estado
-function useLocalStorage(key, initialValue) {
-  const [value, setValue] = useState(() => {
+function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
+  const [value, setValue] = useState<T>(() => {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : initialValue;
   });
 
-  const setStoredValue = (newValue) => {
+  const setStoredValue = (newValue: T): void => {
     setValue(newValue);
     localStorage.setItem(key, JSON.stringify(newValue));
   };
@@ -420,13 +504,13 @@ function useLocalStorage(key, initialValue) {
 }
 
 // Usar
-function App() {
-  const [nome, setNome] = useLocalStorage('nome', '');
+function App(): JSX.Element {
+  const [nome, setNome] = useLocalStorage<string>('nome', '');
 
   return (
     <input
       value={nome}
-      onChange={(e) => setNome(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value)}
     />
   );
 }
@@ -434,31 +518,33 @@ function App() {
 
 ## Eventos
 
-```jsx
-function Eventos() {
+```tsx
+import React from 'react';
+
+function Eventos(): JSX.Element {
   // Click
-  const handleClick = (e) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>): void => {
     console.log('Clicou!', e);
   };
 
   // Com parâmetros
-  const handleClickParam = (id) => {
+  const handleClickParam = (id: number): void => {
     console.log('ID:', id);
   };
 
   // Submit de formulário
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); // Prevenir reload da página
     console.log('Formulário enviado');
   };
 
   // Change
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     console.log(e.target.value);
   };
 
   // Keyboard
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter') {
       console.log('Enter pressionado');
     }
@@ -497,10 +583,14 @@ function Eventos() {
 
 ## Renderização Condicional
 
-```jsx
-function Condicional() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState('user');
+```tsx
+import { useState } from 'react';
+
+type Role = 'admin' | 'user' | 'guest';
+
+function Condicional(): JSX.Element {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [role, setRole] = useState<Role>('user');
 
   // if/else simples com &&
   return (
@@ -522,7 +612,13 @@ function Condicional() {
 }
 
 // Com componente separado
-function MensagemStatus({ status }) {
+type Status = 'loading' | 'error' | 'success' | 'idle';
+
+interface MensagemStatusProps {
+  status: Status;
+}
+
+function MensagemStatus({ status }: MensagemStatusProps): JSX.Element | null {
   if (status === 'loading') return <p>Carregando...</p>;
   if (status === 'error') return <p>Erro!</p>;
   if (status === 'success') return <p>Sucesso!</p>;
@@ -532,9 +628,28 @@ function MensagemStatus({ status }) {
 
 ## Listas e Keys
 
-```jsx
-function Listas() {
-  const usuarios = [
+```tsx
+interface Usuario {
+  id: number;
+  nome: string;
+  idade: number;
+}
+
+interface CardUsuarioProps {
+  usuario: Usuario;
+}
+
+function CardUsuario({ usuario }: CardUsuarioProps): JSX.Element {
+  return (
+    <div className="card">
+      <h3>{usuario.nome}</h3>
+      <p>{usuario.idade} anos</p>
+    </div>
+  );
+}
+
+function Listas(): JSX.Element {
+  const usuarios: Usuario[] = [
     { id: 1, nome: 'João', idade: 25 },
     { id: 2, nome: 'Maria', idade: 30 },
     { id: 3, nome: 'Pedro', idade: 35 }
@@ -544,7 +659,7 @@ function Listas() {
     <div>
       {/* Map básico */}
       <ul>
-        {usuarios.map(usuario => (
+        {usuarios.map((usuario: Usuario) => (
           <li key={usuario.id}>
             {usuario.nome} - {usuario.idade} anos
           </li>
@@ -552,7 +667,7 @@ function Listas() {
       </ul>
 
       {/* Com componente */}
-      {usuarios.map(usuario => (
+      {usuarios.map((usuario: Usuario) => (
         <CardUsuario
           key={usuario.id}
           usuario={usuario}
@@ -560,14 +675,14 @@ function Listas() {
       ))}
 
       {/* Com index (use apenas se não houver id único) */}
-      {usuarios.map((usuario, index) => (
+      {usuarios.map((usuario: Usuario, index: number) => (
         <li key={index}>{usuario.nome}</li>
       ))}
 
       {/* Filter + Map */}
       {usuarios
-        .filter(u => u.idade > 25)
-        .map(u => (
+        .filter((u: Usuario) => u.idade > 25)
+        .map((u: Usuario) => (
           <li key={u.id}>{u.nome}</li>
         ))
       }
@@ -578,20 +693,38 @@ function Listas() {
 
 ## Formulários
 
-```jsx
-function Formulario() {
-  const [formData, setFormData] = useState({
+```tsx
+import React, { useState } from 'react';
+
+interface FormData {
+  nome: string;
+  email: string;
+  senha: string;
+  aceito: boolean;
+  genero: string;
+  pais: string;
+  mensagem: string;
+}
+
+function Formulario(): JSX.Element {
+  const [formData, setFormData] = useState<FormData>({
     nome: '',
     email: '',
     senha: '',
     aceito: false,
     genero: '',
-    pais: 'br'
+    pais: 'br',
+    mensagem: ''
   });
 
   // Atualizar campo individual
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ): void => {
+    const target = e.target as HTMLInputElement;
+    const { name, value, type } = target;
+    const checked = target.checked;
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -599,7 +732,7 @@ function Formulario() {
   };
 
   // Submit
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     console.log('Dados:', formData);
   };
@@ -693,10 +826,12 @@ function Formulario() {
 
 ## Estilização
 
-```jsx
+```tsx
+import React from 'react';
+
 // CSS Inline
-function InlineStyle() {
-  const estilo = {
+function InlineStyle(): JSX.Element {
+  const estilo: React.CSSProperties = {
     color: 'blue',
     fontSize: '20px',
     backgroundColor: 'lightgray'
@@ -712,7 +847,7 @@ function InlineStyle() {
 // CSS Modules
 import styles from './MeuComponente.module.css';
 
-function ComModules() {
+function ComModules(): JSX.Element {
   return (
     <div className={styles.container}>
       <h1 className={styles.titulo}>Título</h1>
@@ -721,7 +856,11 @@ function ComModules() {
 }
 
 // Classe condicional
-function ClasseCondicional({ ativo }) {
+interface ClasseCondicionalProps {
+  ativo: boolean;
+}
+
+function ClasseCondicional({ ativo }: ClasseCondicionalProps): JSX.Element {
   return (
     <div className={ativo ? 'ativo' : 'inativo'}>
       Conteúdo
@@ -730,7 +869,12 @@ function ClasseCondicional({ ativo }) {
 }
 
 // Múltiplas classes
-function MultiClasses({ ativo, erro }) {
+interface MultiClassesProps {
+  ativo: boolean;
+  erro: boolean;
+}
+
+function MultiClasses({ ativo, erro }: MultiClassesProps): JSX.Element {
   const classes = `botao ${ativo ? 'ativo' : ''} ${erro ? 'erro' : ''}`;
 
   return <button className={classes}>Botão</button>;
@@ -739,7 +883,7 @@ function MultiClasses({ ativo, erro }) {
 // Com classnames (biblioteca)
 import classNames from 'classnames';
 
-function ComClassNames({ ativo, erro }) {
+function ComClassNames({ ativo, erro }: MultiClassesProps): JSX.Element {
   return (
     <button className={classNames('botao', { ativo, erro })}>
       Botão
@@ -755,7 +899,7 @@ function ComClassNames({ ativo, erro }) {
 npm install react-router-dom
 ```
 
-```jsx
+```tsx
 import {
   BrowserRouter,
   Routes,
@@ -765,8 +909,9 @@ import {
   useParams,
   Navigate
 } from 'react-router-dom';
+import { ReactNode } from 'react';
 
-function App() {
+function App(): JSX.Element {
   return (
     <BrowserRouter>
       <nav>
@@ -788,16 +933,16 @@ function App() {
 }
 
 // Usar parâmetros da URL
-function Usuario() {
-  const { id } = useParams();
+function Usuario(): JSX.Element {
+  const { id } = useParams<{ id: string }>();
   return <h1>Usuário ID: {id}</h1>;
 }
 
 // Navegação programática
-function Login() {
+function Login(): JSX.Element {
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = (): void => {
     // Após login bem-sucedido
     navigate('/dashboard');
 
@@ -812,14 +957,18 @@ function Login() {
 }
 
 // Rota protegida
-function RotaProtegida({ children }) {
+interface RotaProtegidaProps {
+  children: ReactNode;
+}
+
+function RotaProtegida({ children }: RotaProtegidaProps): JSX.Element {
   const isAutenticado = true; // verificar autenticação
 
   if (!isAutenticado) {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 }
 
 // Usar rota protegida
@@ -840,9 +989,16 @@ function RotaProtegida({ children }) {
 npm install axios
 ```
 
-```jsx
-import axios from 'axios';
+```tsx
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { useState, useEffect } from 'react';
+
+// Definir tipos
+interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+}
 
 // Configurar instância
 const api = axios.create({
@@ -853,16 +1009,16 @@ const api = axios.create({
   }
 });
 
-function ExemploAxios() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(false);
+function ExemploAxios(): JSX.Element {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // GET
   useEffect(() => {
-    const fetchUsuarios = async () => {
+    const fetchUsuarios = async (): Promise<void> => {
       try {
         setLoading(true);
-        const response = await api.get('/usuarios');
+        const response = await api.get<Usuario[]>('/usuarios');
         setUsuarios(response.data);
       } catch (error) {
         console.error('Erro:', error);
@@ -875,9 +1031,9 @@ function ExemploAxios() {
   }, []);
 
   // POST
-  const criarUsuario = async (novoUsuario) => {
+  const criarUsuario = async (novoUsuario: Omit<Usuario, 'id'>): Promise<void> => {
     try {
-      const response = await api.post('/usuarios', novoUsuario);
+      const response = await api.post<Usuario>('/usuarios', novoUsuario);
       setUsuarios([...usuarios, response.data]);
     } catch (error) {
       console.error('Erro ao criar:', error);
@@ -885,9 +1041,9 @@ function ExemploAxios() {
   };
 
   // PUT
-  const atualizarUsuario = async (id, dadosAtualizados) => {
+  const atualizarUsuario = async (id: number, dadosAtualizados: Partial<Usuario>): Promise<void> => {
     try {
-      await api.put(`/usuarios/${id}`, dadosAtualizados);
+      await api.put<Usuario>(`/usuarios/${id}`, dadosAtualizados);
       // Atualizar estado local
     } catch (error) {
       console.error('Erro ao atualizar:', error);
@@ -895,7 +1051,7 @@ function ExemploAxios() {
   };
 
   // DELETE
-  const deletarUsuario = async (id) => {
+  const deletarUsuario = async (id: number): Promise<void> => {
     try {
       await api.delete(`/usuarios/${id}`);
       setUsuarios(usuarios.filter(u => u.id !== id));
@@ -909,21 +1065,21 @@ function ExemploAxios() {
 
 // Interceptors
 api.interceptors.request.use(
-  config => {
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     // Adicionar token de autenticação
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  error => Promise.reject(error)
+  (error: AxiosError) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response.status === 401) {
+  (response: AxiosResponse): AxiosResponse => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
       // Redirecionar para login
     }
     return Promise.reject(error);
@@ -933,14 +1089,15 @@ api.interceptors.response.use(
 
 ## Lazy Loading e Code Splitting
 
-```jsx
+```tsx
 import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 
 // Lazy loading de componente
 const Dashboard = lazy(() => import('./Dashboard'));
 const Perfil = lazy(() => import('./Perfil'));
 
-function App() {
+function App(): JSX.Element {
   return (
     <div>
       <Suspense fallback={<div>Carregando...</div>}>
@@ -955,25 +1112,42 @@ function App() {
     </div>
   );
 }
+
+function Spinner(): JSX.Element {
+  return <div className="spinner">Carregando...</div>;
+}
 ```
 
 ## Performance
 
-```jsx
+```tsx
 import { memo } from 'react';
 
+interface MeuComponenteProps {
+  nome: string;
+}
+
 // React.memo - Evitar re-render desnecessário
-const MeuComponente = memo(function MeuComponente({ nome }) {
+const MeuComponente = memo(function MeuComponente({ nome }: MeuComponenteProps): JSX.Element {
   console.log('Renderizou');
   return <h1>{nome}</h1>;
 });
 
 // Com comparação customizada
+interface Usuario {
+  id: number;
+  nome: string;
+}
+
+interface MeuComponenteCustomProps {
+  usuario: Usuario;
+}
+
 const MeuComponenteCustom = memo(
-  function MeuComponente({ usuario }) {
+  function MeuComponente({ usuario }: MeuComponenteCustomProps): JSX.Element {
     return <h1>{usuario.nome}</h1>;
   },
-  (prevProps, nextProps) => {
+  (prevProps: MeuComponenteCustomProps, nextProps: MeuComponenteCustomProps): boolean => {
     // Retornar true se props são iguais (não renderizar)
     return prevProps.usuario.id === nextProps.usuario.id;
   }
@@ -1006,35 +1180,39 @@ const MeuComponenteCustom = memo(
 src/
 ├── components/         # Componentes reutilizáveis
 │   ├── Button/
-│   │   ├── Button.jsx
+│   │   ├── Button.tsx
 │   │   ├── Button.module.css
-│   │   └── index.js
+│   │   ├── Button.types.ts
+│   │   └── index.ts
 │   └── ...
 ├── pages/             # Páginas/rotas
 │   ├── Home/
 │   ├── About/
 │   └── ...
 ├── hooks/             # Custom hooks
-│   ├── useFetch.js
-│   └── useAuth.js
+│   ├── useFetch.ts
+│   └── useAuth.ts
 ├── context/           # Context providers
-│   └── AuthContext.jsx
+│   └── AuthContext.tsx
 ├── services/          # APIs e serviços
-│   └── api.js
+│   └── api.ts
+├── types/             # Tipos e interfaces globais
+│   ├── user.types.ts
+│   └── api.types.ts
 ├── utils/             # Funções utilitárias
-│   └── helpers.js
-├── App.jsx
-└── main.jsx
+│   └── helpers.ts
+├── App.tsx
+└── main.tsx
 ```
 
 ## Atalhos e Snippets Úteis
 
-```jsx
+```tsx
 // Importação rápida (atalho: imr)
 import React from 'react';
 
 // useState (atalho: ush)
-const [state, setState] = useState(initialState);
+const [state, setState] = useState<Type>(initialState);
 
 // useEffect (atalho: uef)
 useEffect(() => {
@@ -1044,8 +1222,12 @@ useEffect(() => {
   };
 }, [dependencies]);
 
-// Componente funcional (atalho: rafce)
-const ComponentName = () => {
+// Componente funcional com TypeScript (atalho: tsrafce)
+interface ComponentNameProps {
+  // props
+}
+
+const ComponentName = ({}: ComponentNameProps): JSX.Element => {
   return (
     <div>
 
